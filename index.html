@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>工務巡查</title>
+<meta name="theme-color" content="#1f5f8b">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="工務巡查">
+<style>
+:root{
+  --bg:#f3f5f7;--card:#fff;--ink:#1c2430;--mute:#66707c;--line:#d9dee4;
+  --pri:#1f5f8b;--pri-ink:#fff;--ok:#1e7a46;--ok-bg:#e3f4ea;--bad:#c62828;--bad-bg:#fde7e7;
+  --warn:#9a5b00;--warn-bg:#fff3d6;--sel:#e6eef5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161c;--card:#1a212a;--ink:#e6ebf0;--mute:#9aa5b1;--line:#2c3540;
+    --pri:#5aa0d6;--pri-ink:#0b1117;--ok:#6fd39a;--ok-bg:#16301f;--bad:#ff8a80;--bad-bg:#3a1a1a;
+    --warn:#ffcc66;--warn-bg:#3a2e12;--sel:#22303d;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161c;--card:#1a212a;--ink:#e6ebf0;--mute:#9aa5b1;--line:#2c3540;
+  --pri:#5aa0d6;--pri-ink:#0b1117;--ok:#6fd39a;--ok-bg:#16301f;--bad:#ff8a80;--bad-bg:#3a1a1a;
+  --warn:#ffcc66;--warn-bg:#3a2e12;--sel:#22303d;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;-webkit-text-size-adjust:100%}
+header{position:sticky;top:0;z-index:5;background:var(--pri);color:var(--pri-ink);padding:calc(env(safe-area-inset-top) + 8px) 16px 0}
+header h1{margin:0 0 6px;font-size:18px;font-weight:700}
+nav{display:flex;gap:4px}
+nav button{flex:1;border:0;background:transparent;color:inherit;opacity:.75;padding:10px 4px;font-size:16px;font-weight:600;border-bottom:3px solid transparent}
+nav button.on{opacity:1;border-bottom-color:currentColor}
+main{padding:12px 16px calc(96px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+.tab{display:none}.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px}
+.card h2{font-size:16px;margin:0 0 8px;color:var(--pri);display:flex;justify-content:space-between;align-items:center}
+.row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.row label{flex:1;min-width:0;font-size:15px}
+.row .hint{display:block;font-size:12px;color:var(--mute)}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:42px}
+input.num{width:120px;text-align:right}
+input.txt,select.txt{width:150px}
+input[type=time]{width:120px}
+textarea{width:100%;min-height:70px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+.seg button{border:0;background:var(--bg);color:var(--mute);font:inherit;font-size:15px;padding:9px 12px;min-width:56px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on.g{background:var(--ok-bg);color:var(--ok);font-weight:700}
+.seg button.on.r{background:var(--bad-bg);color:var(--bad);font-weight:700}
+.seg button.on.n{background:var(--sel);color:var(--ink);font-weight:700}
+.row.bad{background:var(--bad-bg);margin:0 -12px;padding:7px 12px}
+.mini{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;font:inherit;font-size:14px}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;justify-content:center}
+.bar button{flex:1;max-width:240px;border:0;border-radius:10px;padding:13px 8px;font:inherit;font-weight:700}
+.bar .p{background:var(--pri);color:var(--pri-ink)}
+.bar .s{background:var(--sel);color:var(--ink)}
+.bar[hidden]{display:none}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:15px;max-width:90vw;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.prev{font-size:12px;color:var(--mute)}
+.delta{font-size:12px;margin-left:4px}
+.w{color:var(--warn);background:var(--warn-bg);border-radius:6px;padding:1px 6px}
+.e{color:var(--bad);background:var(--bad-bg);border-radius:6px;padding:1px 6px}
+.note{font-size:14px;color:var(--mute)}
+.alarm{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 0;border-top:1px solid var(--line)}
+.alarm input{width:100%}
+.alarm .full{grid-column:1/-1}
+.status{font-size:14px;padding:8px 10px;border-radius:8px;background:var(--sel)}
+a{color:var(--pri)}
+</style>
+</head>
+<body>
+<header>
+  <h1>工務巡查</h1>
+  <nav>
+    <button data-tab="patrol" class="on">每日巡查表</button>
+    <button data-tab="hours">運轉時數</button>
+    <button data-tab="setup">設定</button>
+  </nav>
+</header>
+
+<main>
+  <section id="patrol" class="tab on"></section>
+
+  <section id="hours" class="tab">
+    <div class="card">
+      <div class="row"><label>日期</label><input type="date" id="h-date"></div>
+      <div class="row"><label>記錄人</label><select id="h-rec" class="txt"></select></div>
+      <div class="row"><label>住房率</label><input id="h-occ" class="num" inputmode="decimal" placeholder="選填"></div>
+      <div class="row"><label>從今天巡查表帶入<span class="hint">自來水、高壓電力（B1電表9）、客房鍋爐、廚房鍋爐</span></label><button class="mini" id="h-pull">帶入</button></div>
+    </div>
+    <div class="card"><h2>讀數 <span class="note" id="h-prevnote"></span></h2><div id="h-list"><p class="note">讀取中…</p></div></div>
+    <div class="card">
+      <h2>Excel</h2>
+      <p class="note">整份 115 年度運轉時數（含巡查紀錄分頁）下載成 Excel 檔。</p>
+      <button class="mini" id="h-xlsx">下載 Excel</button>
+    </div>
+  </section>
+
+  <section id="setup" class="tab">
+    <div class="card">
+      <h2>連線設定</h2>
+      <p class="note">這兩項只存在這支手機裡。由管理者提供。</p>
+      <div class="row"><label>寫入網址</label></div>
+      <input id="s-url" style="width:100%" placeholder="https://script.google.com/macros/s/…/exec">
+      <div class="row" style="margin-top:8px"><label>密碼</label><input id="s-token" class="txt" autocomplete="off"></div>
+      <div class="row"><label>巡查人預設</label><input id="s-me" class="txt" list="people" placeholder="例如 Kevin"></div>
+      <p><button class="mini" id="s-save">儲存並測試連線</button></p>
+      <div class="status" id="s-status">尚未設定</div>
+    </div>
+    <div class="card">
+      <h2>給同事的設定連結</h2>
+      <p class="note">設定好後按下面按鈕，會產生一條連結；同事用手機點開就自動設定完成。連結含密碼，只傳給同事本人。</p>
+      <button class="mini" id="s-link">複製設定連結</button>
+    </div>
+    <div class="card">
+      <h2>加到主畫面</h2>
+      <p class="note">iPhone：Safari 下方分享鈕 → 加入主畫面。Android：Chrome 右上角 ⋮ → 加到主畫面。</p>
+    </div>
+  </section>
+</main>
+
+<div class="bar" id="bar-patrol">
+  <button class="s" id="p-word">產生 Word</button>
+  <button class="p" id="p-save">儲存到試算表</button>
+</div>
+<div class="bar" id="bar-hours" hidden>
+  <button class="p" id="h-save">寫入試算表</button>
+</div>
+<datalist id="people"><option>Kevin</option><option>Andy</option><option>Eric</option><option>工班</option></datalist>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+<script>
+'use strict';
+/* ---------- 小工具 ---------- */
+const $ = s => document.querySelector(s);
+const LS = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms || 2600); }
+function today(){ const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+function roc(s){ if(!s) return ''; const [y, m, d] = s.split('-'); return (y - 1911) + '.' + m + '.' + d; }
+function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- 連線 ---------- */
+function cfg(){ return LS.get('cfg', {}); }
+async function api(payload){
+  const c = cfg();
+  if(!c.url || !c.token) throw new Error('請先到「設定」填寫寫入網址與密碼');
+  const res = await fetch(c.url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(Object.assign({ token:c.token }, payload)) });
+  const j = await res.json();
+  if(!j.ok) throw new Error(j.error || '寫入失敗');
+  return j;
+}
+
+/* ---------- 巡查表欄位 ---------- */
+// t: date/text/time/num/ok(正常異常)/run(啟動未啟)/yn(是否)/area
+// keep: 沿用上次的值
+const OPT = { ok:['正常','異常'], run:['啟動','未啟'], yn:['是','否'] };
+const SECTIONS = [
+  ['基本資料', [
+    ['date','日期','date'], ['inspector','巡查人','text'], ['start','開始時間','time'], ['oil','油箱油量','num']]],
+  ['熱水加壓泵', [
+    ['hw_set','壓力設定','num',{keep:1, def:'2.2'}], ['hw_now','當前壓力值','num'],
+    ['hw_p1','手動測試 1號機','ok'], ['hw_p2','手動測試 2號機','ok'], ['hw_p3','手動測試 3號機','ok']]],
+  ['高溫槽', [['ht_st','狀態','ok'], ['ht_temp','溫度','num'], ['ht_pres','壓力','num']]],
+  ['低溫槽', [['lt_st','狀態','ok'], ['lt_temp','溫度','num'], ['lt_pres','壓力','num']]],
+  ['鍋爐循環泵', [['bc_1','手動測試 1號機','ok'], ['bc_2','手動測試 2號機','ok']]],
+  ['熱泵', [
+    ['hp1_run','熱泵1號機','run',{keep:1}], ['hp1_st','熱泵1號機 狀態','ok'],
+    ['hp2_run','熱泵2號機','run',{keep:1}], ['hp2_st','熱泵2號機 狀態','ok']]],
+  ['鍋爐', [1,2,3,4,5].flatMap(n => [['b'+n+'_run', n+'號機','run',{keep:1}], ['b'+n+'_st', n+'號機 狀態','ok']])],
+  ['冰水主機', [['ch_1','手動測試 1號機','ok'], ['ch_2','手動測試 2號機','ok']]],
+  ['冰水泵', [['cp_1','手動測試 1號機','ok'], ['cp_2','手動測試 2號機','ok']]],
+  ['瓦斯', [['gas_boiler','鍋爐瓦斯','num',{hint:'＝運轉時數「客房鍋爐度數」'}], ['gas_kitchen','廚房瓦斯','num',{hint:'＝運轉時數「廚房鍋爐度數」'}]]],
+  ['冷水加壓泵', [
+    ['cw_set','壓力設定','num',{keep:1, def:'2.3'}], ['cw_now','當前壓力值','num'], ['cw_st','狀態','ok'], ['roof_leave','頂樓離開時間','time']]],
+  ['各樓層', [
+    ['f13_power','13F 冷水加壓馬達的送電開關','ok'], ['f2_hr1','2F 熱迴水1號主機手動測試','ok'], ['f2_hr2','2F 熱迴水2號主機手動測試','ok'],
+    ['f1_fire','1F 消防總機有無警報','ok'], ['f1_water','1F 自來水表','num',{hint:'＝運轉時數「自來水度數」'}],
+    ['b1_fridge','B1 冷藏溫度','num'], ['b1_freezer','B1 冷凍溫度','num']]],
+  ['B1 電表', [9,10,11,14,15,18,19,22,23].map(n => ['m'+n, 'B1 電表'+n, 'num', n === 9 ? {hint:'＝運轉時數「高壓電力度數」'} : {}])],
+  ['B2 機房', [
+    ['b2_start','開始時間','time'], ['b2_leave','離開時間','time'],
+    ['b2_acset','冷氣設定溫度','num',{keep:1}], ['b2_temp','當下溫度','num'], ['b2_hum','當下濕度','num'],
+    ...[1,2,3,4,5,6,7].map(n => ['ac'+n, n+'號機','run',{keep:1}]),
+    ['nas','NAS 主機','run',{keep:1}], ['door','門禁主機','run',{keep:1}],
+    ...[1,2,3,4].map(n => ['cam'+n, n+'號監視器','ok'])]],
+  ['B3 / B4', [
+    ['b3_run','B3 空調箱','run',{keep:1}], ['b3_st','B3 空調箱 狀態','ok'],
+    ['b4_ww1','B4 廢水泵1號主機手動測試','ok'], ['b4_ww2','B4 廢水泵2號主機手動測試','ok'],
+    ['b4_lift1','B4 揚升泵1號主機手動測試','ok'], ['b4_lift2','B4 揚升泵2號主機手動測試','ok'],
+    ['b4_wall','B4 連續壁（含消防室）是否滲水','ok']]],
+  ['圖控異常警報', [
+    ['alarm_st','圖控異常警報','ok'], ['alarm_rec','運轉數值是否紀錄','yn',{def:'是'}],
+    ...[1,2,3].flatMap(n => [['al'+n+'_time','時間','time',{alarm:n}], ['al'+n+'_clear','排除時間','time',{alarm:n}], ['al'+n+'_item','項目','text',{alarm:n}]])]],
+  ['備註', [['note','備註','area']]]
+];
+const FIELDS = SECTIONS.flatMap(s => s[1].map(f => ({ id:f[0], label:(['基本資料','備註','各樓層','B3 / B4'].includes(s[0]) || f[1].includes(s[0].split(' ')[0]) ? '' : s[0] + ' ') + f[1], short:f[1], t:f[2], o:f[3] || {} })));
+const F = Object.fromEntries(FIELDS.map(f => [f.id, f]));
+
+function defaults(){
+  const last = LS.get('lastPatrol', {});
+  const d = {};
+  FIELDS.forEach(f => {
+    if(f.t === 'ok') d[f.id] = '正常';
+    else if(f.o.def) d[f.id] = f.o.def;
+    if(f.o.keep && last[f.id]) d[f.id] = last[f.id];
+  });
+  d.inspector = cfg().me || last.inspector || '';
+  return d;
+}
+let P = {};       // 目前巡查表資料
+function draftKey(date){ return 'patrol:' + date; }
+function saveDraft(){ if(P.date) LS.set(draftKey(P.date), P); }
+
+function renderPatrol(){
+  const box = $('#patrol');
+  box.innerHTML = SECTIONS.map(([name, fs]) => {
+    let rows = '';
+    const alarms = {};
+    fs.forEach(f => {
+      const [id, label, t, o = {}] = f;
+      if(o.alarm){ (alarms[o.alarm] = alarms[o.alarm] || []).push(f); return; }
+      rows += fieldRow(id, label, t, o);
+    });
+    Object.keys(alarms).forEach(n => {
+      rows += `<div class="alarm"><div class="note full">異常紀錄 ${n}</div>` +
+        alarms[n].map(([id, label, t]) => `<div${t === 'text' ? ' class="full"' : ''}><span class="note">${label}</span><input data-id="${id}" ${t === 'time' ? 'type="time"' : 'type="text"'}></div>`).join('') + '</div>';
+    });
+    const allOk = fs.some(f => f[2] === 'ok') ? `<button class="mini" data-allok="${esc(name)}">全部正常</button>` : '';
+    return `<div class="card" data-sec="${esc(name)}"><h2>${esc(name)}${allOk}</h2>${rows}</div>`;
+  }).join('') + `<p class="note">每一格都會自動暫存在這支手機；同一天重新儲存會覆蓋試算表上那一天的紀錄。</p>`;
+  fillPatrol();
+}
+function fieldRow(id, label, t, o){
+  const hint = o.hint ? `<span class="hint">${esc(o.hint)}</span>` : '';
+  let ctl;
+  if(OPT[t]) ctl = `<span class="seg" data-id="${id}">` + OPT[t].map((v, i) => `<button type="button" data-v="${v}" class="${t === 'ok' || t === 'yn' ? (i ? 'r' : 'g') : 'n'}">${v}</button>`).join('') + '</span>';
+  else if(t === 'date') ctl = `<input type="date" data-id="${id}">`;
+  else if(t === 'time') ctl = `<input type="time" data-id="${id}">`;
+  else if(t === 'num') ctl = `<input class="num" inputmode="decimal" data-id="${id}">`;
+  else if(t === 'area') return `<textarea data-id="${id}" placeholder="選填"></textarea>`;
+  else ctl = `<input class="txt" data-id="${id}" ${id === 'inspector' ? 'list="people"' : ''}>`;
+  return `<div class="row" data-row="${id}"><label>${esc(label)}${hint}</label>${ctl}</div>`;
+}
+function fillPatrol(){
+  document.querySelectorAll('#patrol [data-id]').forEach(el => {
+    const id = el.dataset.id, v = P[id] ?? '';
+    if(el.classList.contains('seg')){
+      el.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+      const row = el.closest('.row'); if(row) row.classList.toggle('bad', v === '異常' || (id === 'alarm_rec' && v === '否'));
+    } else el.value = v;
+  });
+}
+function loadPatrolDate(date){
+  const d = LS.get(draftKey(date), null);
+  P = d || Object.assign(defaults(), { date });
+  fillPatrol();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('#patrol .seg button');
+  if(b){
+    const id = b.parentElement.dataset.id;
+    P[id] = P[id] === b.dataset.v && F[id].t === 'run' ? '' : b.dataset.v;
+    fillPatrol(); saveDraft(); return;
+  }
+  const a = e.target.closest('[data-allok]');
+  if(a){
+    a.closest('.card').querySelectorAll('.seg').forEach(s => { if(F[s.dataset.id].t === 'ok') P[s.dataset.id] = '正常'; });
+    fillPatrol(); saveDraft();
+  }
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if(!el.closest('#patrol') || !el.dataset.id) return;
+  if(el.dataset.id === 'date'){ saveDraft(); loadPatrolDate(el.value || today()); maybeFetchPatrol(); return; }
+  P[el.dataset.id] = el.value; saveDraft();
+});
+
+async function maybeFetchPatrol(){
+  if(LS.get(draftKey(P.date), null) || !cfg().url) return;
+  try{
+    const j = await api({ action:'patrol', date:P.date });
+    if(j.data && confirm(roc(P.date) + ' 在試算表上已有巡查紀錄，要載入嗎？')){ P = Object.assign({}, j.data); fillPatrol(); saveDraft(); }
+  }catch(e){}
+}
+
+$('#p-save').onclick = async () => {
+  if(!P.inspector){ toast('請填巡查人'); return; }
+  const btn = $('#p-save'); btn.disabled = true; btn.textContent = '儲存中…';
+  try{
+    await api({ action:'savePatrol', fields: FIELDS.map(f => [f.id, f.label || f.short]), data: P });
+    LS.set('lastPatrol', P);
+    toast('已儲存到試算表 ✔');
+  }catch(e){ toast(e.message, 4000); }
+  finally{ btn.disabled = false; btn.textContent = '儲存到試算表'; }
+};
+
+/* ---------- Word（版面比照紙本） ---------- */
+// 8 欄格線；[文字, 欄數] 為標籤，{f:id, s:欄數} 為填寫值，{h:標題} 為區塊標題列
+const L = (t, s) => [t, s || 1];
+const V = (f, s) => ({ f, s: s || 1 });
+const H = (h, s) => ({ h, s: s || 8 });
+const WORD = [
+  [L('日期'), V('date',3), L('巡查人'), V('inspector',3)],
+  [L('開始時間'), V('start',3), L('油箱油量'), V('oil',3)],
+  [H('熱水加壓泵')],
+  [L('壓力設定',2), V('hw_set',2), L('當前壓力值',2), V('hw_now',2)],
+  [L('手動測試1號機',2), V('hw_p1'), L('2號機'), V('hw_p2'), L('3號機'), V('hw_p3',2)],
+  [H('高溫槽',4), H('低溫槽',4)],
+  [L('狀態',2), V('ht_st',2), L('狀態',2), V('lt_st',2)],
+  [L('溫度'), V('ht_temp'), L('壓力'), V('ht_pres'), L('溫度'), V('lt_temp'), L('壓力'), V('lt_pres')],
+  [H('鍋爐循環泵')],
+  [L('手動測試1號機',2), V('bc_1',2), L('手動測試2號機',2), V('bc_2',2)],
+  [H('熱泵')],
+  [L('熱泵1號機'), V('hp1_run',2), V('hp1_st'), L('熱泵2號機'), V('hp2_run',2), V('hp2_st')],
+  [H('鍋爐')],
+  [L('1號機'), V('b1_run',2), V('b1_st'), L('2號機'), V('b2_run',2), V('b2_st')],
+  [L('3號機'), V('b3_run',2), V('b3_st'), L('4號機'), V('b4_run',2), V('b4_st')],
+  [L('5號機'), V('b5_run',2), V('b5_st'), L('',4)],
+  [H('冰水主機')],
+  [L('手動測試1號機',2), V('ch_1',2), L('手動測試2號機',2), V('ch_2',2)],
+  [H('冰水泵')],
+  [L('手動測試1號機',2), V('cp_1',2), L('手動測試2號機',2), V('cp_2',2)],
+  [L('鍋爐瓦斯',2), V('gas_boiler',2), L('廚房瓦斯',2), V('gas_kitchen',2)],
+  [H('冷水加壓泵')],
+  [L('壓力設定'), V('cw_set'), L('當前壓力值'), V('cw_now'), V('cw_st',2), L('頂樓離開時間'), V('roof_leave')],
+  [L('13F冷水加壓馬達的送電開關',3), V('f13_power'), L('1F 消防總機有無警報',3), V('f1_fire')],
+  [L('2F熱迴水1號主機手動測試',3), V('f2_hr1'), L('2F熱迴水2號主機手動測試',3), V('f2_hr2')],
+  [L('1F自來水表',2), V('f1_water',2), L('B1冷藏溫度'), V('b1_fridge'), L('B1冷凍溫度'), V('b1_freezer')],
+  [L('B1電表9'), L('B1電表10'), L('B1電表11'), L('B1電表14'), L('B1電表15'), L('B1電表18'), L('B1電表19'), L('B1電表22')],
+  [V('m9'), V('m10'), V('m11'), V('m14'), V('m15'), V('m18'), V('m19'), V('m22')],
+  [L('B1電表23'), V('m23'), L('',6)],
+  [H('B2機房')],
+  [L('開始時間',2), V('b2_start',2), L('離開時間',2), V('b2_leave',2)],
+  [L('冷氣設定溫度',2), V('b2_acset'), L('當下溫度'), V('b2_temp'), L('當下濕度',2), V('b2_hum')],
+  [L('1號機'), V('ac1'), L('2號機'), V('ac2'), L('3號機'), V('ac3'), L('4號機'), V('ac4')],
+  [L('5號機'), V('ac5'), L('6號機'), V('ac6'), L('7號機'), V('ac7'), L('NAS主機'), V('nas')],
+  [L('1號監視器'), V('cam1'), L('2號監視器'), V('cam2'), L('3號監視器'), V('cam3'), L('4號監視器'), V('cam4')],
+  [L('門禁主機',2), V('door',2), L('B3空調箱'), V('b3_run',2), V('b3_st')],
+  [L('B4廢水泵1號主機手動測試',3), V('b4_ww1'), L('B4廢水泵2號主機手動測試',3), V('b4_ww2')],
+  [L('B4揚升泵1號主機手動測試',3), V('b4_lift1'), L('B4揚升泵2號主機手動測試',3), V('b4_lift2')],
+  [L('B4連續壁(含消防室)是否滲水',4), V('b4_wall',4)],
+  [H('圖控異常警報')],
+  [L('狀態',2), V('alarm_st',2), L('運轉數值是否紀錄',2), V('alarm_rec',2)],
+  [L('時間'), L('排除時間'), L('項目',6)],
+  [V('al1_time'), V('al1_clear'), V('al1_item',6)],
+  [V('al2_time'), V('al2_clear'), V('al2_item',6)],
+  [V('al3_time'), V('al3_clear'), V('al3_item',6)],
+  [L('備註'), V('note',7)]
+];
+function wordRuns(id){
+  const D = docx, f = F[id], v = P[id] ?? '';
+  const base = { size:18, font:{ eastAsia:'標楷體', ascii:'Times New Roman' } };
+  if(OPT[f.t]){
+    const runs = [];
+    OPT[f.t].forEach((o, i) => {
+      if(i) runs.push(new D.TextRun(Object.assign({ text:'／' }, base)));
+      const on = o === v, bad = on && (o === '異常' || o === '否');
+      runs.push(new D.TextRun(Object.assign({}, base, { text:(on ? '◉' : '') + o, bold:on, color: bad ? 'C62828' : (on ? '000000' : '999999') })));
+    });
+    return runs;
+  }
+  let text = f.t === 'date' ? roc(v) : String(v);
+  return [new D.TextRun(Object.assign({ text }, base))];
+}
+async function makeWord(){
+  const D = docx, COLW = 1318;
+  const border = { style:D.BorderStyle.SINGLE, size:4, color:'000000' };
+  const borders = { top:border, bottom:border, left:border, right:border };
+  const cell = (children, span, shade) => new D.TableCell({
+    columnSpan: span, borders, verticalAlign: D.VerticalAlign.CENTER,
+    width: { size: COLW * span, type: D.WidthType.DXA },
+    margins: { top:20, bottom:20, left:50, right:50 },
+    shading: shade ? { type: D.ShadingType.CLEAR, fill:'D9D9D9', color:'auto' } : undefined,
+    children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, spacing:{ before:0, after:0 }, children })]
+  });
+  const txt = (t, bold) => new D.TextRun({ text:t, size:18, bold, font:{ eastAsia:'標楷體', ascii:'Times New Roman' } });
+  const rows = [new D.TableRow({ children:[cell([new D.TextRun({ text:'每日巡查表', size:26, bold:true, font:{ eastAsia:'標楷體' } })], 8)] })];
+  WORD.forEach(r => rows.push(new D.TableRow({
+    height: { value: 300, rule: D.HeightRule.ATLEAST },
+    children: r.map(c => Array.isArray(c) ? cell([txt(c[0])], c[1]) : c.h ? cell([txt(c.h, true)], c.s, true) : cell(wordRuns(c.f), c.s))
+  })));
+  const doc = new D.Document({
+    styles: { default: { document: { run: { font:{ eastAsia:'標楷體', ascii:'Times New Roman' }, size:18 } } } },
+    sections: [{
+      properties: { page: { size:{ width:11906, height:16838 }, margin:{ top:567, bottom:567, left:680, right:680 } } },
+      children: [new D.Table({ columnWidths: Array(8).fill(COLW), width:{ size:COLW * 8, type:D.WidthType.DXA }, rows })]
+    }]
+  });
+  return D.Packer.toBlob(doc);
+}
+async function deliver(blob, name, mime){
+  const file = new File([blob], name, { type: mime });
+  if(navigator.canShare && navigator.canShare({ files:[file] })){
+    try{ await navigator.share({ files:[file], title:name }); return; }
+    catch(e){ if(e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+$('#p-word').onclick = async () => {
+  if(typeof docx === 'undefined'){ toast('Word 元件還沒載入，請確認有網路再試一次'); return; }
+  try{
+    const blob = await makeWord();
+    await deliver(blob, '每日巡查表_' + roc(P.date) + '.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  }catch(e){ toast('產生失敗：' + e.message, 4000); }
+};
+
+/* ---------- 運轉時數 ---------- */
+const SHARED = { 21:'f1_water', 22:'m9', 23:'gas_boiler', 24:'gas_kitchen' };
+const METER_FROM = 21;   // 第 22 項起是錶的度數，不是時數
+let HD = null;            // 伺服器回傳資料
+async function loadHours(){
+  const date = $('#h-date').value;
+  $('#h-list').innerHTML = '<p class="note">讀取中…</p>';
+  $('#h-prevnote').textContent = '';
+  try{
+    HD = await api({ action:'hours', date });
+    const draft = LS.get('hours:' + date, null);
+    const recs = HD.recorders && HD.recorders.length ? HD.recorders : ['Kevin','Andy','Eric','工班'];
+    $('#h-rec').innerHTML = '<option value="">（選擇）</option>' + recs.map(r => `<option>${esc(String(r).trim())}</option>`).join('');
+    $('#h-rec').value = (draft && draft.recorder) || HD.today.recorder || cfg().me || '';
+    $('#h-occ').value = (draft && draft.occupancy) || HD.today.occupancy || '';
+    $('#h-prevnote').textContent = HD.prev ? '上次：' + HD.prev.date.slice(5).replace('-', '/') : '';
+    $('#h-list').innerHTML = HD.labels.map((lab, i) => {
+      const cur = draft ? draft.values[i] : HD.today.values[i];
+      return `<div class="row"><label>${esc(lab)}<span class="prev" id="hp${i}"></span></label><input class="num" inputmode="decimal" data-h="${i}" value="${esc(cur)}"></div>`;
+    }).join('');
+    checkAll();
+  }catch(e){ $('#h-list').innerHTML = `<p class="note">${esc(e.message)}</p>`; }
+}
+function hVals(){ return [...document.querySelectorAll('[data-h]')].map(el => el.value.trim()); }
+function check(i){
+  const el = document.querySelector(`[data-h="${i}"]`), out = $('#hp' + i);
+  if(!el || !out) return 0;
+  const p = HD && HD.prev ? HD.prev.values[i] : '';
+  const v = el.value.trim();
+  let html = p !== '' && p !== null ? `上次 ${esc(p)}` : '';
+  let lvl = 0;
+  if(v !== '' && p !== '' && p !== null && !isNaN(v)){
+    const d = Math.round((Number(v) - Number(p)) * 10) / 10;
+    const days = Math.max(1, Math.round((new Date($('#h-date').value) - new Date(HD.prev.date)) / 864e5));
+    if(d < 0){ lvl = 2; html += ` <span class="delta e">比上次少 ${-d}</span>`; }
+    else if(i < METER_FROM && d > 24 * days){ lvl = 1; html += ` <span class="delta w">+${d}，超過 ${24 * days} 小時</span>`; }
+    else html += ` <span class="delta">+${d}</span>`;
+  }
+  if(v !== '' && isNaN(v)){ lvl = 2; html += ' <span class="delta e">不是數字</span>'; }
+  out.innerHTML = html ? '<br>' + html : '';
+  return lvl;
+}
+function checkAll(){ let worst = 0; document.querySelectorAll('[data-h]').forEach(el => worst = Math.max(worst, check(+el.dataset.h))); return worst; }
+function saveHoursDraft(){ LS.set('hours:' + $('#h-date').value, { values:hVals(), recorder:$('#h-rec').value, occupancy:$('#h-occ').value }); }
+document.addEventListener('input', e => {
+  if(e.target.dataset.h !== undefined){ check(+e.target.dataset.h); saveHoursDraft(); }
+  if(e.target.id === 'h-occ') saveHoursDraft();
+});
+$('#h-rec').onchange = saveHoursDraft;
+$('#h-date').onchange = loadHours;
+$('#h-pull').onclick = () => {
+  const date = $('#h-date').value;
+  const src = date === P.date ? P : LS.get(draftKey(date), null);
+  if(!src){ toast('這一天還沒有巡查表資料'); return; }
+  let n = 0;
+  Object.entries(SHARED).forEach(([i, id]) => { const el = document.querySelector(`[data-h="${i}"]`); if(el && src[id]){ el.value = src[id]; n++; } });
+  checkAll(); saveHoursDraft(); toast(n ? `帶入 ${n} 項` : '巡查表這 4 項還沒填');
+};
+$('#h-save').onclick = async () => {
+  if(!HD){ toast('還沒讀到試算表'); return; }
+  if(!$('#h-rec').value){ toast('請選記錄人'); return; }
+  const lvl = checkAll();
+  if(lvl === 2 && !confirm('有讀數比上次少或不是數字（紅色），確定要寫入嗎？')) return;
+  if(lvl === 1 && !confirm('有讀數一天增加超過 24 小時（黃色），確定要寫入嗎？')) return;
+  const btn = $('#h-save'); btn.disabled = true; btn.textContent = '寫入中…';
+  try{
+    const vals = hVals();
+    if(vals.every(v => v === '')) throw new Error('還沒有填任何讀數');
+    const j = await api({ action:'saveHours', date:$('#h-date').value, values:vals, recorder:$('#h-rec').value, occupancy:$('#h-occ').value });
+    toast(`已寫入 ${j.sheet} ✔`);
+  }catch(e){ toast(e.message, 4000); }
+  finally{ btn.disabled = false; btn.textContent = '寫入試算表'; }
+};
+$('#h-xlsx').onclick = async () => {
+  const btn = $('#h-xlsx'); btn.disabled = true; btn.textContent = '下載中…';
+  try{
+    const j = await api({ action:'xlsx' });
+    const bin = atob(j.base64), u8 = new Uint8Array(bin.length);
+    for(let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    await deliver(new Blob([u8]), j.name, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  }catch(e){ toast(e.message, 4000); }
+  finally{ btn.disabled = false; btn.textContent = '下載 Excel'; }
+};
+
+/* ---------- 設定 ---------- */
+function showCfg(){ const c = cfg(); $('#s-url').value = c.url || ''; $('#s-token').value = c.token || ''; $('#s-me').value = c.me || ''; }
+$('#s-save').onclick = async () => {
+  LS.set('cfg', { url:$('#s-url').value.trim(), token:$('#s-token').value.trim(), me:$('#s-me').value.trim() });
+  $('#s-status').textContent = '測試中…';
+  try{ const j = await api({ action:'ping' }); $('#s-status').textContent = '連線成功：' + j.name; }
+  catch(e){ $('#s-status').textContent = '連線失敗：' + e.message; }
+};
+$('#s-link').onclick = async () => {
+  const c = cfg();
+  if(!c.url || !c.token){ toast('請先完成上面的連線設定'); return; }
+  const link = location.origin + location.pathname + '#u=' + encodeURIComponent(c.url) + '&t=' + encodeURIComponent(c.token);
+  try{ await navigator.clipboard.writeText(link); toast('已複製，貼到 LINE 傳給同事'); }
+  catch(e){ prompt('複製這條連結：', link); }
+};
+(function readHash(){
+  if(!location.hash.startsWith('#u=')) return;
+  const q = new URLSearchParams(location.hash.slice(1));
+  const c = cfg(); c.url = q.get('u'); c.token = q.get('t'); LS.set('cfg', c);
+  history.replaceState(null, '', location.pathname);
+  setTimeout(() => toast('已完成連線設定，請到「設定」填巡查人預設'), 300);
+})();
+
+/* ---------- 分頁 ---------- */
+function go(tab){
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  document.querySelectorAll('.tab').forEach(s => s.classList.toggle('on', s.id === tab));
+  $('#bar-patrol').hidden = tab !== 'patrol';
+  $('#bar-hours').hidden = tab !== 'hours';
+  if(tab === 'hours' && !HD) loadHours();
+  if(tab === 'setup') showCfg();
+  LS.set('tab', tab);
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => go(b.dataset.tab));
+
+renderPatrol();
+loadPatrolDate(today());
+$('#h-date').value = today();
+if(!cfg().url) go('setup'); else { go(LS.get('tab', 'patrol')); maybeFetchPatrol(); }
+</script>
+</body>
+</html>
